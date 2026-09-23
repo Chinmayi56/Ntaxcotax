@@ -302,7 +302,7 @@ function normalizeService(service, index) {
   }
 
   return {
-    id: service?.id || `service-${index}`,
+    id: service?.id ? String(service.id) : "",
     title,
     name: title,
     category: service?.category || "Other",
@@ -347,7 +347,10 @@ export default function BookServiceModal({
     city: "",
     state: "",
     pincode: "",
-    service: preselectService || "",
+    service:
+      typeof preselectService === "object"
+        ? preselectService?.title || preselectService?.name || ""
+        : preselectService || "",
     project_name: "",
     description: "",
     project_value: "",
@@ -487,7 +490,10 @@ export default function BookServiceModal({
       company: previous.company || user?.name || "",
       email: previous.email || user?.email || "",
       mobile: previous.mobile || user?.mobile || "",
-      service: preselectService || previous.service || "",
+      service:
+      typeof preselectService === "object"
+        ? preselectService?.title || preselectService?.name || ""
+        : preselectService || previous.service || "",
     }));
   }, [open, user, preselectService]);
 
@@ -506,13 +512,25 @@ export default function BookServiceModal({
       return null;
     }
 
-    return (
-      services.find(
-        (service) =>
-          String(service.title || service.name).toLowerCase() ===
-          String(form.service).toLowerCase()
-      ) || null
-    );
+    const preselectedId =
+      typeof preselectService === "object"
+        ? String(preselectService?.id || "").trim()
+        : "";
+
+    const selected = services.find((service) => {
+      const serviceId = String(service?.id || "").trim();
+      const serviceTitle = String(
+        service?.title || service?.name || ""
+      ).trim().toLowerCase();
+
+      if (preselectedId && serviceId === preselectedId) {
+        return true;
+      }
+
+      return serviceTitle === String(form.service).trim().toLowerCase();
+    });
+
+    return selected || null;
   }, [services, form.service]);
 
   /* -------------------------------------------------------
@@ -559,7 +577,10 @@ export default function BookServiceModal({
 
     setForm((previous) => ({
       ...previous,
-      service: preselectService || "",
+      service:
+      typeof preselectService === "object"
+        ? preselectService?.title || preselectService?.name || ""
+        : preselectService || "",
       project_value: "",
       description: "",
       start_date: "",
@@ -632,6 +653,14 @@ export default function BookServiceModal({
       return;
     }
 
+    if (!selectedService?.id) {
+      toast.error(
+        "This service is not available for booking right now. Please refresh the services page and select a service created by Admin."
+      );
+      setStep(0);
+      return;
+    }
+
     if (!form.accurate || !form.terms) {
       toast.error(
         "Please accept the confirmations to continue."
@@ -674,6 +703,9 @@ export default function BookServiceModal({
         customer_id: user.id,
 
         service: form.service,
+
+        // Canonical MongoDB service ID required by /api/bookings.
+        service_id: selectedService.id,
 
         assigned_employee: form.assigned_employee || "",
         assigned_agent: consultant.name || "",
