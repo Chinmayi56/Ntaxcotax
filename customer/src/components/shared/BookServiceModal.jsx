@@ -508,30 +508,30 @@ export default function BookServiceModal({
      Find selected service.
   ------------------------------------------------------- */
   const selectedService = useMemo(() => {
-    if (!form.service) {
-      return null;
+  if (!form.service) {
+    return null;
+  }
+
+  const preselectedId =
+    typeof preselectService === "object"
+      ? String(preselectService?.id || "").trim()
+      : "";
+
+  const selected = services.find((service) => {
+    const serviceId = String(service?.id || "").trim();
+    const serviceTitle = String(
+      service?.title || service?.name || ""
+    ).trim().toLowerCase();
+
+    if (preselectedId && serviceId === preselectedId) {
+      return true;
     }
 
-    const preselectedId =
-      typeof preselectService === "object"
-        ? String(preselectService?.id || "").trim()
-        : "";
+    return serviceTitle === String(form.service).trim().toLowerCase();
+  });
 
-    const selected = services.find((service) => {
-      const serviceId = String(service?.id || "").trim();
-      const serviceTitle = String(
-        service?.title || service?.name || ""
-      ).trim().toLowerCase();
-
-      if (preselectedId && serviceId === preselectedId) {
-        return true;
-      }
-
-      return serviceTitle === String(form.service).trim().toLowerCase();
-    });
-
-    return selected || null;
-  }, [services, form.service]);
+  return selected || null;
+}, [services, form.service, preselectService]);
 
   /* -------------------------------------------------------
      Price calculation.
